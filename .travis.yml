@@ -22,5 +22,6 @@ deploy:
     - $TRAVIS_BUILD_DIR/tar/k8s-ctx-import-windows-386.tar.gz
     - $TRAVIS_BUILD_DIR/tar/k8s-ctx-import-windows-amd64.tar.gz
   skip_cleanup: true
+  overwrite: true
   on:
     tags: true
