@@ -1,4 +1,5 @@
 # k8s-ctx-import
+[![Build Status](https://travis-ci.org/chrischdi/k8s-ctx-import.svg?branch=master)](https://travis-ci.org/chrischdi/k8s-ctx-import)
 
 `k8s-ctx-import` is an utility to merge kubernetes contexts to a single kubeconfig.
 
@@ -20,6 +21,7 @@ Example:
 ## Install pre-compiled version
 
 * Download a pre-compiled version from the [releases](https://github.com/chrischdi/k8s-ctx-import/releases) page
+* Unpack tar.gz
 * Make sure it is executable
 * Move the binary into `$PATH`
 
