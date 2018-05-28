@@ -58,7 +58,7 @@ func readConfig(path string) (*v1.Config, error) {
 }
 
 func main() {
-	flag.Parse()
+	flags.Parse(os.Args[1:])
 
 	conf, err := readConfig("")
 	if err != nil {
@@ -130,10 +130,10 @@ func main() {
 	var exists bool
 	// check if context having the same name already exists
 	exists = false
-	for _, c := range gconf.Contexts {
+	for i, c := range gconf.Contexts {
 		if c.Name == ctx.Name {
 			if force {
-				c.Context = ctx.Context
+				gconf.Contexts[i] = *ctx
 			} else {
 				fmt.Fprintf(os.Stderr, "WARN: context having the same name (%s) already exists\n", c.Name)
 			}
@@ -147,10 +147,10 @@ func main() {
 
 	// check if cluster having the same name already exists
 	exists = false
-	for _, c := range gconf.Clusters {
+	for i, c := range gconf.Clusters {
 		if c.Name == cluster.Name {
 			if force {
-				c.Cluster = cluster.Cluster
+				gconf.Clusters[i] = *cluster
 			} else {
 				fmt.Fprintf(os.Stderr, "WARN: cluster information having the same name (%s) already exists\n", c.Name)
 			}
@@ -164,10 +164,10 @@ func main() {
 
 	// check if authInfo having the same name already exists
 	exists = false
-	for _, a := range gconf.AuthInfos {
+	for i, a := range gconf.AuthInfos {
 		if a.Name == authInfo.Name {
 			if force {
-				a.AuthInfo = authInfo.AuthInfo
+				gconf.AuthInfos[i] = *authInfo
 			} else {
 				fmt.Fprintf(os.Stderr, "WARN: authentication information having the same name (%s) already exists\n", a.Name)
 			}
