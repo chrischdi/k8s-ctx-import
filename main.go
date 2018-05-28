@@ -87,6 +87,7 @@ func main() {
 	for _, c := range conf.Contexts {
 		if c.Name == conf.CurrentContext {
 			ctx = &c
+			break
 		}
 	}
 	if ctx == nil {
@@ -98,6 +99,7 @@ func main() {
 	for _, a := range conf.AuthInfos {
 		if a.Name == ctx.Context.AuthInfo {
 			authInfo = &a
+			break
 		}
 	}
 	if authInfo == nil {
@@ -109,6 +111,7 @@ func main() {
 	for _, c := range conf.Clusters {
 		if c.Name == ctx.Context.Cluster {
 			cluster = &c
+			break
 		}
 	}
 	if cluster == nil {
@@ -135,6 +138,7 @@ func main() {
 				fmt.Fprintf(os.Stderr, "WARN: context having the same name (%s) already exists\n", c.Name)
 			}
 			exists = true
+			break
 		}
 	}
 	if !exists {
@@ -151,6 +155,7 @@ func main() {
 				fmt.Fprintf(os.Stderr, "WARN: cluster information having the same name (%s) already exists\n", c.Name)
 			}
 			exists = true
+			break
 		}
 	}
 	if !exists {
@@ -167,6 +172,7 @@ func main() {
 				fmt.Fprintf(os.Stderr, "WARN: authentication information having the same name (%s) already exists\n", a.Name)
 			}
 			exists = true
+			break
 		}
 	}
 	if !exists {
