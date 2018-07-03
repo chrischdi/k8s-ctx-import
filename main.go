@@ -16,6 +16,7 @@ import (
 // `glog`` library which gets imported somewhere in `client-go`.
 var (
 	force bool
+	setCurrentContext bool
 	name  string
 	help  bool
 	flags = new(flag.FlagSet)
@@ -33,6 +34,7 @@ func init() {
 	flag.Usage = Usage
 	flags.BoolVar(&help, "help", false, "display this help and exit")
 	flags.BoolVar(&force, "force", false, "force import of context")
+	flags.BoolVar(&setCurrentContext, "set-current-context", true, "set current context to imported context")
 	flags.StringVar(&name, "name", "", "renames the context for the import")
 }
 
@@ -179,7 +181,9 @@ func main() {
 		gconf.AuthInfos = append(gconf.AuthInfos, *authInfo)
 	}
 
-	gconf.CurrentContext = ctx.Name
+	if setCurrentContext {
+		gconf.CurrentContext = ctx.Name
+	}
 
 	b, err := yaml.Marshal(gconf)
 	if err != nil {
