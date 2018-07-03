@@ -15,12 +15,12 @@ import (
 // The usage of a manually defined `FlagSet`` hides the flags created by the
 // `glog`` library which gets imported somewhere in `client-go`.
 var (
-	force bool
+	force             bool
 	setCurrentContext bool
-	name  string
-	help  bool
-	flags = new(flag.FlagSet)
-	Usage = func() {
+	name              string
+	help              bool
+	flags             = new(flag.FlagSet)
+	Usage             = func() {
 		fmt.Fprintf(os.Stderr, "`k8s-ctx-import` is an utility to merge kubernetes contexts to a single kubeconfig.\n")
 		fmt.Fprintf(os.Stderr, "It imports the context either to `~/.kube/config` or to the file defined by the `KUBECONFIG` environment variable.\n")
 		fmt.Fprintf(os.Stderr, "Usage of k8s-ctx-import:\n")
@@ -61,6 +61,14 @@ func readConfig(path string) (*v1.Config, error) {
 
 func main() {
 	flags.Parse(os.Args[1:])
+	if os.Args[1] == "-h" {
+		os.Exit(1)
+	}
+
+	if help {
+		Usage()
+		os.Exit(0)
+	}
 
 	conf, err := readConfig("")
 	if err != nil {
