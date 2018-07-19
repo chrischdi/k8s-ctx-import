@@ -1,3 +1,6 @@
+# v0.3.1
+* bug: fix index out of range when no flag is given
+
 # v0.3.0
 * feature: add parameter `-set-current-context=false` to be able to toggle the context overwrite ([#1](https://github.com/chrischdi/k8s-ctx-import/pull/1))
 * bug: Fix `-help` and `-h` to exit and print usage

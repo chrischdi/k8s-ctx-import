@@ -61,7 +61,7 @@ func readConfig(path string) (*v1.Config, error) {
 
 func main() {
 	flags.Parse(os.Args[1:])
-	if os.Args[1] == "-h" {
+	if len(os.Args) > 1 && os.Args[1] == "-h" {
 		os.Exit(1)
 	}
 
