@@ -1,5 +1,6 @@
 # v0.4.0
 * refactor: split out functions readFile readKubeconfig and mergeKubeconfig for better testing possibilities
+* tests: write unit tests readfile, readKubeconfig and mergeKubeconfig 
 
 # v0.3.1
 * bug: fix index out of range when no flag is given
