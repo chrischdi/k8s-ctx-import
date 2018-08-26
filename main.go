@@ -7,6 +7,8 @@ import (
 	"os"
 	"path"
 
+	"log"
+
 	"github.com/ghodss/yaml"
 
 	"k8s.io/client-go/tools/clientcmd/api/v1"
@@ -38,8 +40,8 @@ func init() {
 	flags.StringVar(&name, "name", "", "renames the context for the import")
 }
 
-// reads a configfile from `path`. If `path == ""` it will read from stdin.
-func readConfig(path string) (*v1.Config, error) {
+// readFile reads from stdin (if path is empty) or from a file and returns its string
+func readFile(path string) ([]byte, error) {
 	var b []byte
 	var err error
 	if path == "" {
@@ -50,13 +52,20 @@ func readConfig(path string) (*v1.Config, error) {
 	if err != nil {
 		return nil, err
 	}
-	c := &v1.Config{}
-	err = yaml.Unmarshal(b, &c)
+	return b, err
+}
+
+func readKubeconfig(path string) (*v1.Config, error) {
+	d := &v1.Config{}
+	c, err := readFile(path)
 	if err != nil {
 		return nil, err
 	}
-
-	return c, nil
+	err = yaml.Unmarshal(c, &d)
+	if err != nil {
+		return nil, err
+	}
+	return d, nil
 }
 
 func main() {
@@ -70,65 +79,95 @@ func main() {
 		os.Exit(0)
 	}
 
-	conf, err := readConfig("")
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "unable to read stdin: %v\n", err)
+	// determine output file
+	destinationPath := os.Getenv("KUBECONFIG")
+	if destinationPath == "" {
+		destinationPath = path.Join(os.Getenv("HOME"), ".kube", "config")
 	}
 
-	// determine output file
-	var gconfFile string
-	if os.Getenv("KUBECONFIG") != "" {
-		gconfFile = os.Getenv("KUBECONFIG")
-	} else {
-		gconfFile = path.Join(os.Getenv("HOME"), ".kube", "config")
-	}
-	gconf, err := readConfig(gconfFile)
+	// set output to stderr
+	log.SetOutput(os.Stderr)
+
+	// "" means we read from stdin
+	newcfg, err := mergeKubeconfig("", destinationPath)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "WARN: unable to read file %s: %v\n", gconfFile, err)
+		log.Fatalf("%v\n", err)
 	}
-	if gconf == nil {
-		gconf = &v1.Config{
+
+	b, err := yaml.Marshal(newcfg)
+	if err != nil {
+		log.Fatalf("error Marshaling new kubeconfig\n")
+	}
+
+	if destinationPath != "" {
+		err = ioutil.WriteFile(destinationPath, b, 0644)
+		if err != nil {
+			log.Fatalf("unable to write file %s\n", destinationPath)
+		}
+	} else {
+		fmt.Println(string(b))
+	}
+}
+
+// mergeKubeconfig tries to merge the kubeconfig at sourcePath (stdin if empty string)
+// to the kubeconfig at destinationPath and returns the result
+func mergeKubeconfig(sourcePath, destinationPath string) (*v1.Config, error) {
+	source, err := readKubeconfig(sourcePath)
+	if err != nil {
+		return nil, err
+	}
+	if source == nil {
+		return nil, fmt.Errorf("source kubeconfig is empty")
+	}
+
+	destination, err := readKubeconfig(destinationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if destination == nil {
+		destination = &v1.Config{
 			APIVersion: "v1",
 			Kind:       "Config",
 		}
 	}
 
+	// extract context, auth and cluster information from source
+
 	var ctx *v1.NamedContext
-	for _, c := range conf.Contexts {
-		if c.Name == conf.CurrentContext {
+	for _, c := range source.Contexts {
+		if c.Name == source.CurrentContext {
 			ctx = &c
 			break
 		}
 	}
 	if ctx == nil {
-		fmt.Fprintf(os.Stderr, "ERROR: context %s not found\n", conf.CurrentContext)
-		os.Exit(1)
+		return nil, fmt.Errorf("ERROR: context %s not found", source.CurrentContext)
 	}
 
 	var authInfo *v1.NamedAuthInfo
-	for _, a := range conf.AuthInfos {
+	for _, a := range source.AuthInfos {
 		if a.Name == ctx.Context.AuthInfo {
 			authInfo = &a
 			break
 		}
 	}
 	if authInfo == nil {
-		fmt.Fprintf(os.Stderr, "ERROR: authInfo %s not found\n", ctx.Context.AuthInfo)
-		os.Exit(1)
+		return nil, fmt.Errorf("authInfo %s not found", ctx.Context.AuthInfo)
 	}
 
 	var cluster *v1.NamedCluster
-	for _, c := range conf.Clusters {
+	for _, c := range source.Clusters {
 		if c.Name == ctx.Context.Cluster {
 			cluster = &c
 			break
 		}
 	}
 	if cluster == nil {
-		fmt.Fprintf(os.Stderr, "ERROR: cluster %s not found\n", ctx.Context.Cluster)
-		os.Exit(1)
+		return nil, fmt.Errorf("cluster %s not found", ctx.Context.Cluster)
 	}
 
+	// set new context name if flag is set
 	if name != "" {
 		ctx.Name = name
 		ctx.Context.Cluster = name + "-" + cluster.Name
@@ -140,66 +179,58 @@ func main() {
 	var exists bool
 	// check if context having the same name already exists
 	exists = false
-	for i, c := range gconf.Contexts {
+	for i, c := range destination.Contexts {
 		if c.Name == ctx.Name {
 			if force {
-				gconf.Contexts[i] = *ctx
+				destination.Contexts[i] = *ctx
 			} else {
-				fmt.Fprintf(os.Stderr, "WARN: context having the same name (%s) already exists\n", c.Name)
+				log.Printf("WARN: context having the same name (%s) already exists\n", c.Name)
 			}
 			exists = true
 			break
 		}
 	}
 	if !exists {
-		gconf.Contexts = append(gconf.Contexts, *ctx)
+		destination.Contexts = append(destination.Contexts, *ctx)
 	}
 
 	// check if cluster having the same name already exists
 	exists = false
-	for i, c := range gconf.Clusters {
+	for i, c := range destination.Clusters {
 		if c.Name == cluster.Name {
 			if force {
-				gconf.Clusters[i] = *cluster
+				destination.Clusters[i] = *cluster
 			} else {
-				fmt.Fprintf(os.Stderr, "WARN: cluster information having the same name (%s) already exists\n", c.Name)
+				log.Printf("WARN: cluster information having the same name (%s) already exists\n", c.Name)
 			}
 			exists = true
 			break
 		}
 	}
 	if !exists {
-		gconf.Clusters = append(gconf.Clusters, *cluster)
+		destination.Clusters = append(destination.Clusters, *cluster)
 	}
 
 	// check if authInfo having the same name already exists
 	exists = false
-	for i, a := range gconf.AuthInfos {
+	for i, a := range destination.AuthInfos {
 		if a.Name == authInfo.Name {
 			if force {
-				gconf.AuthInfos[i] = *authInfo
+				destination.AuthInfos[i] = *authInfo
 			} else {
-				fmt.Fprintf(os.Stderr, "WARN: authentication information having the same name (%s) already exists\n", a.Name)
+				log.Printf("WARN: authentication information having the same name (%s) already exists\n", a.Name)
 			}
 			exists = true
 			break
 		}
 	}
 	if !exists {
-		gconf.AuthInfos = append(gconf.AuthInfos, *authInfo)
+		destination.AuthInfos = append(destination.AuthInfos, *authInfo)
 	}
 
 	if setCurrentContext {
-		gconf.CurrentContext = ctx.Name
+		destination.CurrentContext = ctx.Name
 	}
 
-	b, err := yaml.Marshal(gconf)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "WARN: error Marshaling new kubeconfig\n")
-	}
-
-	err = ioutil.WriteFile(gconfFile, b, 0644)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "ERROR: unable to write file %s\n", gconfFile)
-	}
+	return destination, nil
 }
