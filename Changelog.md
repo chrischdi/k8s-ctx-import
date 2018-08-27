@@ -1,3 +1,6 @@
+# v0.4.1
+* enable tests in .travis.yml
+
 # v0.4.0
 * refactor: split out functions readFile readKubeconfig and mergeKubeconfig for better testing possibilities
 * tests: write unit tests readfile, readKubeconfig and mergeKubeconfig 

@@ -1,13 +1,15 @@
 language: go
 
 go:
-  - 1.10.x
+  - 1.11.x
 
 install: go get -v ./...
 
 before_script: chmod +x $TRAVIS_BUILD_DIR/build.sh
 
-script: $TRAVIS_BUILD_DIR/build.sh
+script:
+  - $TRAVIS_BUILD_DIR/build.sh
+  - go test -v ./...
 
 deploy:
   provider: releases
