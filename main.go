@@ -20,6 +20,7 @@ var (
 	force             bool
 	setCurrentContext bool
 	name              string
+	stdout            bool
 	help              bool
 	flags             = new(flag.FlagSet)
 	Usage             = func() {
@@ -34,10 +35,12 @@ var (
 
 func init() {
 	flag.Usage = Usage
+	flags.BoolVar(&help, "h", false, "")
 	flags.BoolVar(&help, "help", false, "display this help and exit")
 	flags.BoolVar(&force, "force", false, "force import of context")
 	flags.BoolVar(&setCurrentContext, "set-current-context", true, "set current context to imported context")
 	flags.StringVar(&name, "name", "", "renames the context for the import")
+	flags.BoolVar(&stdout, "stdout", false, "print result to stdout instead of writing to file")
 }
 
 // readFile reads from stdin (if path is empty) or from a file and returns its string
@@ -70,10 +73,6 @@ func readKubeconfig(path string) (*v1.Config, error) {
 
 func main() {
 	flags.Parse(os.Args[1:])
-	if len(os.Args) > 1 && os.Args[1] == "-h" {
-		os.Exit(1)
-	}
-
 	if help {
 		Usage()
 		os.Exit(0)
@@ -99,7 +98,7 @@ func main() {
 		log.Fatalf("error Marshaling new kubeconfig\n")
 	}
 
-	if destinationPath != "" {
+	if destinationPath != "" && !stdout {
 		err = ioutil.WriteFile(destinationPath, b, 0644)
 		if err != nil {
 			log.Fatalf("unable to write file %s\n", destinationPath)

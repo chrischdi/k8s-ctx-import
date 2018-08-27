@@ -7,15 +7,18 @@
 $ k8s-ctx-import -h
 `k8s-ctx-import` is an utility to merge kubernetes contexts to a single kubeconfig.
 It imports the context either to `~/.kube/config` or to the file defined by the `KUBECONFIG` environment variable.
-Usage:
+Usage of k8s-ctx-import:
   -force
         force import of context
+  -h
   -help
         display this help and exit
   -name string
         renames the context for the import
   -set-current-context
         set current context to imported context (default true)
+  -stdout
+        print result to stdout instead of writing to file
 Example:
     cat /some/kubeconfig | k8s-ctx-import
 ```

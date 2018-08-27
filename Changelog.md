@@ -1,6 +1,8 @@
 # v0.4.0
 * refactor: split out functions readFile readKubeconfig and mergeKubeconfig for better testing possibilities
 * tests: write unit tests readfile, readKubeconfig and mergeKubeconfig 
+* feature: add parameter `-stdout` to print the output to stdout instead of writing to file
+* bug: print help message on -h no matter of position of the flag
 
 # v0.3.1
 * bug: fix index out of range when no flag is given
