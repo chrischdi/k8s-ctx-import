@@ -22,8 +22,8 @@ do
   mkdir -p bin/$goos/$goarch
 
   # build
-  CGO_ENABLED=0 GOOS=$goos GOARCH=$goarch go build -ldflags='-s -w' -v -o bin/$goos/$goarch/$name$ext
-  
+  CGO_ENABLED=0 GOOS=$goos GOARCH=$goarch go build -mod=vendor -ldflags='-s -w' -v -o bin/$goos/$goarch/$name$ext
+
   # pack
   tar cfvz tar/$name-$goos-$goarch.tar.gz -C bin/$goos/$goarch .
 done
