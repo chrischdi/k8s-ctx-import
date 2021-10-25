@@ -4,18 +4,14 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"path"
 
-	"log"
-
-	"github.com/ghodss/yaml"
-
-	"k8s.io/client-go/tools/clientcmd/api/v1"
+	v1 "k8s.io/client-go/tools/clientcmd/api/v1"
+	"sigs.k8s.io/yaml"
 )
 
-// The usage of a manually defined `FlagSet`` hides the flags created by the
-// `glog`` library which gets imported somewhere in `client-go`.
 var (
 	force             bool
 	setCurrentContext bool
